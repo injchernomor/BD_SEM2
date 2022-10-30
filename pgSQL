@@ -1,0 +1,266 @@
+1)Выведите на экран любое сообщение
+SELECT * FROM people 
+ORDER BY surname DESC;
+
+2)Выведите на экран текущую дату
+SELECT current_date	
+
+3)Создайте две числовые переменные и присвойте им значение. 
+Выполните математические действия с этими числами и выведите результат на экран
+DO $$
+DECLARE
+   x integer := 5;
+   y integer := 5;
+BEGIN
+    raise notice 'x + y =  %', x + y;
+	  raise notice 'x - y =  %', x - y;
+	  raise notice 'x * y =  %', x * y;
+    raise notice 'x / y =  %', x / y;
+END $$;
+
+4.1)Написать программу двумя способами 1 - использование IF, 2 - использование CASE. Объявите числовую переменную и присвоейте ей значение.
+Если число равно 5 - выведите на экран "Отлично". 4 - "Хорошо". 3 - Удовлетворительно". 2 - "Неуд".
+В остальных случаях выведите на экран сообщение, что введённая оценка не верна.
+
+DO $$
+DECLARE
+   x integer := 1;
+BEGIN
+	IF x = 5 THEN raise notice 'Отлично';
+	ELSIF x = 4 THEN raise notice 'Хорошо';
+	ELSIF x = 3 THEN raise notice 'Удовлетворительно';
+	ELSIF x = 2 THEN raise notice 'Неуд';
+	ELSE raise notice 'Введённая оценка не верна';
+	END IF;
+END $$;
+
+4.2)
+DO $$
+DECLARE
+   x integer := 1;
+BEGIN
+	CASE x
+		WHEN 5 THEN raise notice 'Отлично';
+		WHEN 4 THEN raise notice 'Хорошо';
+		WHEN 3 THEN raise notice 'Удовлетворительно';
+		WHEN 2 THEN raise notice 'Неуд';
+    ELSE raise notice 'Введённая оценка не верна';
+	END CASE;
+END $$;
+
+5)Выведите все квадраты чисел от 20 до 30 3-мя разными способами (LOOP, WHILE, FOR).
+
+5.1)
+DO $$
+DECLARE
+   i integer := 20;
+BEGIN
+	LOOP
+    	raise notice '%',
+      i*i;
+		  i := i + 1;
+		  IF i >30 THEN EXIT;
+    	END IF;
+END LOOP;
+END $$;
+
+5.2)
+DO $$
+DECLARE
+   i integer := 20;
+BEGIN
+	WHILE i <= 30 LOOP
+		raise notice '%',
+    i*i;
+		i := i + 1;
+	END LOOP;
+END $$;
+
+5.3)
+DO $$
+BEGIN
+	FOR i IN 20..30 LOOP
+		raise notice '%',
+    i*i;
+	END LOOP;
+END $$;
+
+6)Последовательность Коллатца. Берётся любое натуральное число. Если чётное - делим его на 2,
+если нечётное, то умножаем его на 3 и прибавляем 1. Такие действия выполняются до тех пор,
+пока не будет получена единица. Гипотеза заключается в том,
+что какое бы начальное число n не было выбрано, всегда получится 1 на каком-то шаге.
+Задания: написать функцию, входной параметр - начальное число, на выходе - количество чисел,
+пока не получим 1; написать процедуру, которая выводит все числа последовательности.
+Входной параметр - начальное число.
+
+6.1)
+CREATE OR REPLACE FUNCTION F(num int) RETURNS integer 
+AS $$
+
+DECLARE
+	pram int := num;
+	count int := 0;
+
+BEGIN
+	    WHILE pram != 1 LOOP
+			IF pram % 2 = 0 THEN pram := pram/2;
+			  ELSE pram := pram*3 + 1;
+			  END IF;
+			  count := count + 1;
+		  END LOOP;
+RETURN count;
+END;
+$$ LANGUAGE plpgsql;
+
+SELECT * FROM F(10)
+
+6.2)
+CREATE OR REPLACE PROCEDURE P(num int)
+AS $$
+
+DECLARE
+	pram int := num;
+BEGIN
+	WHILE pram != 1 LOOP
+		raise notice '%', pram;
+		IF pram % 2 = 0 THEN pram := pram/2;
+		ELSE pram := pram*3 + 1;
+		END IF;
+	END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+CALL P(10)
+
+7)
+Числа Люка. Объявляем и присваиваем значение переменной - количество числе Люка. 
+Вывести на экран последовательность чисел. Где L0 = 2, L1 = 1 ; Ln=Ln-1 + Ln-2 (сумма двух предыдущих чисел). 
+Задания: написать фунцию, входной параметр - количество чисел, на выходе - последнее число 
+(Например: входной 5, 2 1 3 4 7 - на выходе число 7); написать процедуру, которая выводит все числа последовательности.
+Входной параметр - количество чисел.
+
+7.1)
+CREATE OR REPLACE FUNCTION Luk(num int) RETURNS integer
+AS $$
+DECLARE
+	pram int := num;
+BEGIN
+	IF pram = 1 THEN RETURN 2;
+	ELSIF pram = 2 THEN RETURN 1;
+	END IF;
+	RETURN Luk(pram-1) + Luk(pram-2);
+END;
+$$ LANGUAGE plpgsql;
+
+SELECT * FROM Luk(5)
+
+
+7.2)
+CREATE OR REPLACE PROCEDURE LukePr(num int)
+AS $$
+
+DECLARE
+	L0 int := 2;
+	L1 int := 1;
+	tmp int;
+BEGIN
+	raise notice '%', L0;
+	raise notice '%', L1;
+	FOR i IN 0..num-3 LOOP
+		tmp := L0;
+		L0 := L1;
+		L1 := tmp + L1;
+		raise notice '%', L1;
+	END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+CALL LukePR(5)
+
+8) Напишите функцию, которая возвращает количество человек родившихся в заданном году
+
+CREATE OR REPLACE FUNCTION F2(yr int) RETURNS int 
+AS $$
+DECLARE
+	pram int;
+BEGIN
+	SELECT count(*) INTO pram FROM people
+	WHERE EXTRACT(YEAR FROM people.birth_date) = yr;
+	RETURN pram;
+END
+$$ LANGUAGE plpgsql;
+
+SELECT * FROM F2(1995)
+
+9) Напишите функцию, которая возвращает количество человек с заданным цветом глаз.
+
+CREATE OR REPLACE FUNCTION F3(color varchar) RETURNS int 
+AS $$
+
+DECLARE
+	pram int;
+BEGIN
+	SELECT count(*) INTO pram FROM people
+	WHERE people.eyes = color;
+	RETURN pram;
+END
+$$ LANGUAGE plpgsql;
+
+SELECT * FROM F3('blue')
+
+10)Напишите функцию, которая возвращает ID самого молодого человека в таблице
+
+CREATE OR REPLACE FUNCTION F4() RETURNS int 
+AS $$
+DECLARE
+	pram int;
+BEGIN
+	SELECT people.id INTO pram FROM people
+	WHERE birth_date = (SELECT max(birth_date) FROM people);
+	RETURN pram;
+END
+$$ LANGUAGE plpgsql;
+
+SELECT F4()
+
+11) Напишите процедуру, которая возвращает людей с индексом массы тела больше заданного. ИМТ = масса в кг / (рост в м)^2.
+CREATE OR REPLACE PROCEDURE F6(x decimal)
+AS $$
+DECLARE
+	pram people%ROWTYPE;
+BEGIN
+	FOR pram IN SELECT * FROM people
+		LOOP
+			IF pram.weight / (pram.growth/100)^2 > x THEN
+				RAISE NOTICE 'Имя: % Фамилия: %', pram.name, pram.surname;
+			END IF;
+		END LOOP;
+END
+$$ LANGUAGE plpgsql;
+
+CALL F6(1)
+
+12) -
+
+13) -
+
+14) Измените схему БД так, чтобы в БД можно было хранить время актуальности данных человека 
+
+BEGIN;
+ALTER TABLE people
+ADD data_up_to_date_time timestamp NOT NULL DEFAULT NOW();
+COMMIT;
+
+15) Напишите процедуру, которая позволяет актуализировать рост и вес человека.
+
+CREATE OR REPLACE PROCEDURE F8(personId int, newGrowth real, newWeight real)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+	UPDATE people
+	SET data_up_to_date_time = NOW(), growth = newGrowth, weight = newWeight 
+	WHERE people.id = personId;
+END
+$$;
+
+CALL F8(1, 200.0, 100.0)
